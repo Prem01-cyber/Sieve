@@ -28,11 +28,11 @@ class Urgency(str, Enum):
 
 class Action(BaseModel):
     action_type: ActionType
-    category: Optional(Category) = None
-    urgency: Optional(Urgency) = None
-    response_text: Optional(str) = None
-    escalation_reason: Optional(str) = None
-    email_id: Optional(str) = None
+    category: Optional[Category] = None
+    urgency: Optional[Urgency] = None
+    response_text: Optional[str] = None
+    escalation_reason: Optional[str] = None
+    email_id: Optional[str] = None
 
 
 class Email(BaseModel):
@@ -45,7 +45,7 @@ class Email(BaseModel):
 
 
 class Observation(BaseModel):
-    current_email: Optional(Email) = None
+    current_email: Optional[Email] = None
     email_queue: List[Email] = []
     processed_count: int = 0
     step_count: int = 0
