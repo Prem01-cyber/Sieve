@@ -142,6 +142,5 @@ We will be using FastAPI as out backend framework, and we are adding end points 
 | `GET` | `/state` | Current environment state |
 | `GET` | `/tasks` | List all tasks with action schema |
 | `GET` | `/grader` | Current grader score (0.0–1.0) |
-| `POST` | `/baseline` | Run baseline agent and return scores for all tasks |
 
 
