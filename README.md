@@ -10,13 +10,13 @@ Rewards shall be assigned for each correct category and urgency classification.
 
 ## Response Drafting - Task 2 
 
-After classification now we need to prioritize over drafting the response, so agent reads a customer email and drafts a response in accordance with the classified email. Responses generated will be graded on 3 major factors 
+The agent reads a customer email and drafts a professional response. Responses are graded on:
 
-- Covering the relevant information in the response for the issue so that the issue is addressed entirely.
-- Not to generate more than required information and over explain with over information.
-- Maintain a preferred tone over throughout the response generated.
+- Coverage of required keywords for the specific issue type
+- Minimum length (50+ characters)
+- Professional tone
 
-Rewards shall be assigned based on the coverage and length of the response drafted
+Rewards shall be based on the coverage and length of the response drafted.
 
 ## Support Session - Task 3 
 
