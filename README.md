@@ -27,6 +27,69 @@ The agent manages a queue of mixed emails and must perform below actions
 - Choosing actions i.e **respond**, **escalate** or **archive** accordingly
 - Provide correct category and urgency classification
 
+## Data Models
+
+### Enums
+
+#### ActionType
+- `classify` — Classify an email into a category and urgency
+- `respond` — Draft a response to an email
+- `escalate` — Escalate an email with a reason
+- `archive` — Archive an email
+- `skip` — Skip the current email
+
+#### Category
+- `billing` — Payment, invoices, subscription issues
+- `technical` — Bugs, errors, technical failures
+- `general` — General inquiries
+- `spam` — Unsolicited or irrelevant messages
+- `account` — Account access, settings, profile issues
+- `feature_request` — Requests for new features
+
+#### Urgency
+- `high` — Requires immediate attention
+- `medium` — Standard priority
+- `low` — Can be handled later
+
+### Models
+
+#### Email
+- `id` (`str`) — Unique email identifier
+- `subject` (`str`) — Email subject line
+- `body` (`str`) — Email body content
+- `sender` (`str`) — Sender's email address
+- `sender_tier` (`str`, default: `"standard"`) — Customer tier (`standard` or `vip`)
+- `received_minutes_ago` (`int`, default: `0`) — How long ago the email was received
+
+#### Action
+- `action_type` (`ActionType`) — The action to perform
+- `category` (`Category`, optional) — Email category, used with `classify`
+- `urgency` (`Urgency`, optional) — Email urgency, used with `classify`
+- `response_text` (`str`, optional) — Drafted response, used with `respond`
+- `escalation_reason` (`str`, optional) — Reason for escalation, used with `escalate`
+- `email_id` (`str`, optional) — Target email ID, used in `support_session` to select which email to process
+
+#### Observation
+- `current_email` (`Email`, optional) — The email currently being processed
+- `email_queue` (`List[Email]`, default: `[]`) — Queue of pending emails, populated in Task 3 only
+- `processed_count` (`int`, default: `0`) — Number of emails processed so far
+- `step_count` (`int`, default: `0`) — Current step number
+- `task_id` (`str`) — Active task identifier
+- `task_description` (`str`) — Human-readable task description
+- `available_actions` (`List[str]`) — Actions valid for the current state
+- `context` (`Dict`) — Additional context such as `max_steps`, `remaining_steps`, `queue_size`
+
+#### Reward
+- `value` (`float`) — Total reward for the step
+- `components` (`Dict[str, float]`, default: `{}`) — Breakdown of reward sub-components
+- `reason` (`str`, default: `""`) — Human-readable explanation of the reward
+
+#### StepResult
+- `observation` (`Observation`) — Next environment observation
+- `reward` (`Reward`) — Reward received for the action
+- `done` (`bool`) — Whether the episode has ended
+- `info` (`Dict`) — Additional diagnostic information
+
 ## Observation Space
 
 ```json
