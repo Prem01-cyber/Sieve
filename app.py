@@ -18,7 +18,7 @@ env = EmailSortingEnvironment()
 
 
 @app.post("/reset", response_model=Observation)
-def reset(task_id: str = "email_classificaiton"):
+def reset(task_id: str = "email_classification"):
     try:
         return env.reset(task_id)
     except ValueError as exec:
