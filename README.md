@@ -4,7 +4,7 @@ Sieve is a reinforcement learning environment that simulates a real-world custom
 
 ## How It Works
 
-![How It Works](assets/how_it_works.svg)
+![How It Works](assets/how_it_works_v2.svg)
 
 The agent calls `/reset` to start an episode, then loops — reading the current email from the `Observation`, posting an `Action` to `/step`, and receiving a `Reward` and next `Observation` — until `done=true`. Each step reward reflects immediate quality. A `-0.005` step penalty discourages unnecessary actions. The final grader score from `/grader` is a holistic metric computed over the full episode.
 
