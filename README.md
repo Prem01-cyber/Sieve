@@ -4,47 +4,9 @@ Sieve is a reinforcement learning environment that simulates a real-world custom
 
 ## How It Works
 
-```mermaid
- sequenceDiagram
-    participant Agent
-    participant Sieve as Sieve (FastAPI)
+![How It Works](assets/how_it_works.svg)
 
-    Agent->>Sieve: POST /reset?task_id=email_classification
-    Sieve-->>Agent: Observation (current_email, available_actions, context)
-
-    loop Until done=true
-        Agent->>Agent: Read current_email, decide Action
-        Agent->>Sieve: POST /step (Action)
-        Sieve->>Sieve: Compute reward, update state
-        Sieve-->>Agent: StepResult (observation, reward, done, info)
-    end
-
-    Agent->>Sieve: GET /grader
-    Sieve-->>Agent: Final score (0.0–1.0)
-```
-
-
-```
-Agent                          Sieve (FastAPI server)
-  |                                      |
-  |-- POST /reset?task_id=<id> --------> |  Loads email queue, returns first Observation
-  |<- Observation ---------------------- |
-  |                                      |
-  |-- POST /step  (Action) -----------> |  Processes action, computes reward
-  |<- { observation, reward, done, info} |
-  |                                      |
-  |   ... repeat until done=true ...     |
-  |                                      |
-  |-- GET /grader ---------------------->|  Returns final grader score (0.0–1.0)
-```
-
-Each episode follows this loop:
-- The agent calls `/reset` with a `task_id` to start a fresh episode and receive the initial `Observation`
-- The agent reads the current email(s) from the observation and decides on an `Action`
-- The agent posts the action to `/step` and receives the next `Observation`, a `Reward`, and a `done` flag
-- When `done=true`, the agent calls `/grader` to get the final episode score
-
-The reward at each step reflects immediate quality (correct classification, good response, right prioritization). A small step penalty of `-0.005` is applied every step to discourage unnecessary actions. The final grader score is a separate holistic metric computed over the full episode.
+The agent calls `/reset` to start an episode, then loops — reading the current email from the `Observation`, posting an `Action` to `/step`, and receiving a `Reward` and next `Observation` — until `done=true`. Each step reward reflects immediate quality. A `-0.005` step penalty discourages unnecessary actions. The final grader score from `/grader` is a holistic metric computed over the full episode.
 
 ## Project Structure
 
@@ -206,45 +168,6 @@ The agent manages a queue of 15 mixed emails. It must choose which email to hand
 - `reward` (`Reward`) — Reward received for the action
 - `done` (`bool`) — Whether the episode has ended
 - `info` (`Dict`) — Additional diagnostic information
-
-## Observation Space
-
-```json
-{
-  "current_email": {
-    "id": "string",
-    "subject": "string",
-    "body": "string",
-    "sender": "string",
-    "sender_tier": "standard | vip",
-    "received_minutes_ago": "integer"
-  },
-  "email_queue": "array of Email (populated in support_session only)",
-  "processed_count": "integer",
-  "step_count": "integer",
-  "task_id": "string",
-  "task_description": "string",
-  "available_actions": ["classify", "respond", "escalate", "archive", "skip"],
-  "context": {
-    "max_steps": "integer",
-    "remaining_steps": "integer",
-    "queue_size": "integer"
-  }
-}
-```
-
-## Action Space
-
-```json
-{
-  "action_type": "classify | respond | escalate | archive | skip",
-  "category": "billing | technical | general | spam | account | feature_request",
-  "urgency": "high | medium | low",
-  "response_text": "string (for respond action)",
-  "escalation_reason": "string (for escalate action)",
-  "email_id": "string (for support_session — selects which email to process)"
-}
-```
 
 ## Backend API
 
