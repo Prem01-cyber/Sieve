@@ -1,13 +1,148 @@
-from typing import Dict, Any, Tuple
-from models import Action, Observation, Reward
+from os import curdir
+from typing import Dict, Any, List, Optional, Tuple
+from models import Action, ActionType, Email, Observation, Reward
+from data import TASK_CONFIGS
 
 
 class EmailSortingEnvironment:
     def __init__(self) -> None:
+        self.task_id: str = ""
+        self.task_config: Dict = {}
+        self.email_queue: List[Dict] = []
+        self.current_email_idx: int = 0
+        self.step_count: int = 0
+        self.processed_emails: List[Dict] = []
+        self.episode_actions: List[Dict] = []
+        self.done: bool = False
+        self.last_grader_score: Optional[float] = None
+
+    def get_observation(self) -> Observation:
+        if not self.task_id:
+            return Observation()
+        task = self.task_config
+        available_actions = ["classify", "respond", "escalate", "archive", "skip"]
+        if self.task_id == "email_classification":
+            available_actions = ["classify"]
+        elif self.task_id == "response_drafting":
+            available_actions = ["respond"]
+
+        remaining = self.email_queue[self.current_email_idx :]
+
+        def to_email(e: Dict) -> Email:
+            return Email(
+                id=e["id"],
+                subject=e["subject"],
+                body=e["body"],
+                sender=e["sender"],
+                sender_tier=e["sender_tier"],
+                received_minutes_ago=e["received_minutes_ago"],
+            )
+
+        if self.task_id == "support_session":
+            queue = [to_email(e) for e in remaining]
+            current = queue[0] if queue else None
+        else:
+            current = to_email(remaining[0]) if remaining else None
+            queue = []
+
+        return Observation(
+            current_email=current,
+            email_queue=queue,
+            processed_count=len(self.processed_emails),
+            step_count=self.step_count,
+            task_id=self.task_id,
+            task_description=task.get("description", ""),
+            available_actions=available_actions,
+            context={
+                "max_steps": task.get("max_steps", 0),
+                "remaining_steps": task.get("max_steps", 0) - self.step_count,
+                "queue_size": len(remaining),
+            },
+        )
+
+    def process_email_classification(self, action: Action) -> Tuple[Reward, Dict]:
+        if self.current_email_idx >= len(self.email_queue):
+            return Reward(value=0.0, reason="Queue is empty"), {}
+        if action.action_type != ActionType.CLASSIFY:
+            return (
+                Reward(
+                    value=-0.05,
+                    components={"wrong_action": -0.05},
+                    reason="Must use classify action",
+                ),
+                {},
+            )
+        email = self.email_queue[self.current_email_idx]
+        components: Dict[str, float] = {}
+        total = 0.0
+
+        cat_given = action.category_value if action.category else None
+        urg_given = action.urgency_value if action.urgency else None
+
+        if cat_given == email.get("correct_category"):
+            components["category_correct"] = 0.15
+            total += 0.15
+        else:
+            components["category_wrong"] = -0.05
+            total -= 0.05
+
+        if urg_given == email.get("correct_urgency"):
+            components["urgency_correct"] = 0.05
+            total += 0.05
+        else:
+            components["urgency_worng"] = -0.02
+            total -= 0.02
+
+        self.episode_actions.append(
+            {
+                "email_id": email["id"],
+                "action_type": "classify",
+                "category": cat_given,
+                "urgency": urg_given,
+                "correct_category": email.get("correct_category"),
+                "correct_urgency": email.get("correct_urgency"),
+            }
+        )
+        self.processed_emails.append(email)
+        self.current_email_idx += 1
+        cat_ok = "correct" if components.get("category_correct") else "wrong"
+        urg_ok = "correct" if components.get("urgency_correct") else "wrong"
+        return Reward(
+            value=round(total, 4),
+            components=components,
+            reason=f"{email['id']}: category={cat_ok}, urgency={urg_ok}",
+        ), {"email_id": email["id"]}
+
+    def process_response_drafting(self, action: Action) -> Tuple[Reward, Dict]:
         pass
 
-    def reset(self, task_id: str = "email_classification") -> Observation:
+    def process_support_session(self, action: Action) -> Tuple[Reward, Dict]:
         pass
+
+    def process_action(self, action: Action) -> Tuple[Reward, Dict]:
+        if self.task_id == "email_classification":
+            return self.process_email_classification(action)
+        if self.task_id == "response_drafting":
+            self.process_response_drafting(action)
+        if self.task_id == "support_session":
+            self.process_support_session(action)
+        return Reward(value=0.0, reason="Unknown task"), {}
+
+    def reset(self, task_id: str = "email_classification") -> Observation:
+        if task_id not in TASK_CONFIGS:
+            raise ValueError(
+                f"Unknown task: {task_id}. Valid: {list(TASK_CONFIGS.keys())}"
+            )
+        self.task_id = task_id
+        self.task_config = TASK_CONFIGS[task_id]
+        self.email_queue = [dict(e) for e in self.task_config["emails"]]
+        self.current_email_idx = 0
+        self.step_count = 0
+        self.processed_emails = []
+        self.episode_actions = []
+        self.done = False
+        self.last_grader_score = None
+        return self.get_observation()
 
     def step(self, action: Action) -> Tuple[Observation, Reward, bool, Dict]:
         pass
