@@ -3,12 +3,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, HTTPException
-from models import Action, Observation, StepResult
 from fastapi.middleware.cors import CORSMiddleware
 
-from config import ACTION_SCHEMA
-from data import TASK_CONFIGS
-from environment import EmailSortingEnvironment
+from models import Action, Observation, StepResult
+from .config import ACTION_SCHEMA
+from .data import TASK_CONFIGS
+from .environment import EmailSortingEnvironment
 
 app = FastAPI(title="Sieve")
 app.add_middleware(
@@ -77,3 +77,12 @@ def grader():
             for action in env.episode_actions
         ],
     }
+
+
+def main():
+    import uvicorn
+    uvicorn.run("server.app:app", host="0.0.0.0", port=7860)
+
+
+if __name__ == "__main__":
+    main()
