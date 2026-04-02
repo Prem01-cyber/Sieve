@@ -1,5 +1,9 @@
+from math import exp
+from operator import pos
 from os import curdir, wait
 from typing import Dict, Any, List, Optional, Tuple
+
+from nltk.pathsec import validate_network_url
 from models import Action, ActionType, Email, Observation, Reward
 from data import TASK_CONFIGS
 
@@ -178,7 +182,72 @@ class EmailSortingEnvironment:
         ), {"email_id": email["id"], "keywords_matched": matched}
 
     def process_support_session(self, action: Action) -> Tuple[Reward, Dict]:
-        pass
+        remaining = self.email_queue[self.current_email_idx :]
+        if not remaining:
+            return Reward(value=0.0, reason="Queue empty"), {"error": "queue_empty"}
+
+        target_idx = self.current_email_idx
+        if action.email_id:
+            for i, e in enumerate(remaining):
+                if e["id"] == action.email_id:
+                    target_idx = self.current_email_idx + i
+                    break
+
+        if target_idx != self.current_email_idx:
+            self.email_queue[self.current_email_idx], self.email_queue[target_idx] = (
+                self.email_queue[target_idx],
+                self.email_queue[self.current_email_idx],
+            )
+
+        email = self.email_queue[self.current_email_idx]
+        position = len(self.processed_emails)
+        vip_check = email.get("sender_tier") == "vip"
+        expected_urgency = email.get("correct_urgency", "low")
+        components: Dict[str, float] = {}
+        total = 0.0
+
+        if vip_check and position < 4:
+            components["vip_priority"] = 0.08
+            total += 0.08
+        elif vip_check and position >= 4:
+            components["vip_delayed"] = -0.05
+            total -= 0.05
+        elif expected_urgency == "high" and position < 6:
+            components["high_priority"] = 0.05
+            total += 0.05
+        elif expected_urgency == "low" and position > 6:
+            components["low_priority"] = 0.03
+            total += 0.03
+
+        cat_given = action.category.value if action.category else None
+        urg_given = action.urgency.value if action.urgency else None
+
+        if cat_given == email.get("correct_urgency"):
+            components["category_correct"] = 0.04
+            total += 0.04
+        if urg_given == email.get("correct_urgency"):
+            components["urgency_correct"] = 0.02
+            total += 0.02
+
+        action_type = action.action_type.value
+        correct_action = email.get("correct_action", "respond")
+
+        if action_type == correct_action or (
+            email.get("escalation_required") and action_type == "escalate"
+        ):
+            components["correct_action"] = 0.06
+            total += 0.06
+        elif action_type in ("respond", "escalate", "archive"):
+            components["wrong_action"] = -0.03
+            total -= 0.03
+
+        if (
+            action_type == "respond"
+            and action.response_text
+            and len(action.response_text) > 50
+        ):
+            components["response_present"] = 0.02
+            total += 0.02
 
     def process_action(self, action: Action) -> Tuple[Reward, Dict]:
         if self.task_id == "email_classification":
