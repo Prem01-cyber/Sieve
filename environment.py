@@ -4,6 +4,10 @@ from models import Action, ActionType, Email, Observation, Reward
 from data import TASK_CONFIGS
 
 import nltk
+
+nltk.download("vader_lexicon", quiet=True)
+nltk.download("punkt_tab", quiet=True)
+
 from nltk.stem import PorterStemmer
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.tokenize import word_tokenize
