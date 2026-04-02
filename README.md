@@ -179,31 +179,6 @@ The agent manages a queue of 15 mixed emails. It must choose which email to hand
 | `GET` | `/tasks` | List all tasks with action schema |
 | `GET` | `/grader` | Current grader score (0.0–1.0) |
 
-## Setup
-
-**Prerequisites:** Python 3.11+, [uv](https://github.com/astral-sh/uv)
-
-**Install dependencies**
-- `uv sync`
-
-**Environment variables**
-
-- `API_BASE_URL` — LLM API endpoint (default: `https://router.huggingface.co/v1`)
-- `MODEL_NAME` — Model identifier (default: `Qwen/Qwen2.5-7B-Instruct`)
-- `OPENAI_API_KEY` — API key for the LLM provider
-- `HF_TOKEN` — Hugging Face token
-- `ENV_BASE_URL` — Running environment URL (default: `http://localhost:7860`)
-
-**Run the server**
-- `uvicorn server.app:app --host 0.0.0.0 --port 7860`
-
-**Run baseline inference**
-- `python inference.py`
-
-**Run with Docker**
-- `docker build -t sieve .`
-- `docker run -p 7860:7860 -e OPENAI_API_KEY=... sieve`
-
 ## Baseline Scores
 
 Baseline agent: `gpt-4o-mini` via OpenAI API
@@ -211,6 +186,5 @@ Baseline agent: `gpt-4o-mini` via OpenAI API
 | Task | Score | Steps | Total Reward |
 |------|-------|-------|--------------|
 | Email Classification | 0.930 | 10 | 1.755 |
-| Response Drafting | 0.956 | 6 | 1.692 |
-| Support Session | 0.870 | 15 | 1.490 |
-| **Average** | **0.919** | — | — |
+| Response Drafting | 0.920 | 6 | 1.650 |
+| Support Session | 0.882 | 15 | 1.506 |
