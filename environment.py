@@ -4,6 +4,10 @@ from models import Action, ActionType, Email, Observation, Reward
 from data import TASK_CONFIGS
 
 import nltk
+
+nltk.download("vader_lexicon", quiet=True)
+nltk.download("punkt_tab", quiet=True)
+
 from nltk.stem import PorterStemmer
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.tokenize import word_tokenize
@@ -98,8 +102,8 @@ class EmailSortingEnvironment:
         components: Dict[str, float] = {}
         total = 0.0
 
-        cat_given = action.category_value if action.category else None
-        urg_given = action.urgency_value if action.urgency else None
+        cat_given = action.category.value if action.category else None
+        urg_given = action.urgency.value if action.urgency else None
 
         if cat_given == email.get("correct_category"):
             components["category_correct"] = 0.15
