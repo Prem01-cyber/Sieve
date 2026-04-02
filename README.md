@@ -127,6 +127,7 @@ The agent manages a queue of mixed emails and must perform below actions
   "escalation_reason": "string (for escalate action)",
   "email_id": "string (for support_session — selects which email to process)"
 }
+```
 
 # Reward Categorization
 
@@ -145,7 +146,7 @@ The reward is dense — every step produces a signal:
 | `step_penalty` | −0.005 | Applied every step (encourages efficiency) |
 | `wrong_action` | −0.03 to −0.05 | Wrong action type for task |
 | `spam_not_archived` | −0.04 | Spam email not archived |
-```
+
 
 # Backend API 
 
