@@ -1,7 +1,7 @@
 from typing import Dict, Any, List, Optional, Tuple
 
 from models import Action, ActionType, Email, Observation, Reward
-from data import TASK_CONFIGS
+from .data import TASK_CONFIGS
 
 import nltk
 
@@ -146,7 +146,7 @@ class EmailSortingEnvironment:
             return (
                 Reward(
                     value=-0.05,
-                    component={"wrong_action": -0.05},
+                    components={"wrong_action": -0.05},
                     reason="Must use respond action",
                 ),
                 {},
@@ -344,7 +344,6 @@ class EmailSortingEnvironment:
         order = [a["email_id"] for a in self.episode_actions]
         total_emails = len(TASK_CONFIGS["support_session"]["emails"])
 
-        # Prioritization: VIP emails handled early score higher than high-urgency ones
         vip_weight = 0.20 / max(len(vip_ids), 1)
         high_weight = 0.10 / max(len(high_ids), 1)
         priority = 0.0
