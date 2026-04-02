@@ -1,9 +1,5 @@
-from math import exp
-from operator import pos
-from os import curdir, wait
 from typing import Dict, Any, List, Optional, Tuple
 
-from nltk.pathsec import validate_network_url
 from models import Action, ActionType, Email, Observation, Reward
 from data import TASK_CONFIGS
 
@@ -27,6 +23,20 @@ class EmailSortingEnvironment:
         self.episode_actions: List[Dict] = []
         self.done: bool = False
         self.last_grader_score: Optional[float] = None
+
+    def state(self) -> Dict[str, Any]:
+        return {
+            "task_id": self.task_id,
+            "step_count": self.step_count,
+            "processed_count": len(self.processed_emails),
+            "queue_size": max(0, len(self.email_queue) - self.current_email_idx),
+            "done": self.done,
+            "max_steps": (
+                self.task_config.get("max_steps", 0) if self.task_config else 0
+            ),
+            "episode_actions": self.episode_actions,
+            "last_grader_score": self.last_grader_score,
+        }
 
     def get_observation(self) -> Observation:
         if not self.task_id:
@@ -284,6 +294,130 @@ class EmailSortingEnvironment:
             self.process_support_session(action)
         return Reward(value=0.0, reason="Unknown task"), {}
 
+    def email_classification_score(self) -> float:
+        total = len(TASK_CONFIGS["email_classification"]["emails"])
+        cat_correct = sum(
+            1
+            for a in self.episode_actions
+            if a.get("category") == a.get("correct_category")
+        )
+        urg_correct = sum(
+            1
+            for a in self.episode_actions
+            if a.get("urgency") == a.get("correct_urgency")
+        )
+        return round(0.7 * cat_correct / total + 0.3 * urg_correct / total, 3)
+
+    def response_drafting_score(self) -> float:
+        emails = TASK_CONFIGS["response_drafting"]["emails"]
+        total = len(emails)
+        email_map = {e["id"]: e for e in emails}
+        score = 0.0
+        for act in self.episode_actions:
+            cfg = email_map.get(act.get("email_id"))
+            if not cfg:
+                continue
+            matched = act.get("keywords_matched", [])
+            min_m = cfg["min_keyword_matches"]
+            length = act.get("response_length", 0)
+            kw = min(len(matched) / max(min_m, 1), 1.0)
+            length_bonus = min(length / 200, 0.2) if length > 50 else 0.0
+            score += kw * 0.8 + length_bonus
+        return round(score / total, 3)
+
+    def support_session_score(self) -> float:
+        emails_by_id = {e["id"]: e for e in TASK_CONFIGS["support_session"]["emails"]}
+        vip_ids = {
+            e["id"]
+            for e in TASK_CONFIGS["support_session"]["emails"]
+            if e.get("sender_tier") == "vip"
+        }
+        high_ids = {
+            e["id"]
+            for e in TASK_CONFIGS["support_session"]["emails"]
+            if e.get("correct_urgency") == "high" and e.get("sender_tier") != "vip"
+        }
+        order = [a["email_id"] for a in self.episode_actions]
+        total_emails = len(TASK_CONFIGS["support_session"]["emails"])
+
+        # Prioritization: VIP emails handled early score higher than high-urgency ones
+        vip_weight = 0.20 / max(len(vip_ids), 1)
+        high_weight = 0.10 / max(len(high_ids), 1)
+        priority = 0.0
+        for eid in vip_ids:
+            if eid in order:
+                pos = order.index(eid)
+                priority += vip_weight if pos < 4 else vip_weight * 0.4
+        for eid in high_ids:
+            if eid in order:
+                pos = order.index(eid)
+                priority += high_weight if pos < 6 else high_weight * 0.4
+
+        n = len(self.episode_actions)
+        cat_ok = sum(
+            1
+            for a in self.episode_actions
+            if a.get("category")
+            == emails_by_id.get(a["email_id"], {}).get("correct_category")
+        )
+        urg_ok = sum(
+            1
+            for a in self.episode_actions
+            if a.get("urgency")
+            == emails_by_id.get(a["email_id"], {}).get("correct_urgency")
+        )
+        classification = cat_ok / max(n, 1) * 0.15 + urg_ok / max(n, 1) * 0.15
+
+        act_ok = sum(
+            1
+            for a in self.episode_actions
+            if a.get("action_type")
+            == emails_by_id.get(a["email_id"], {}).get("correct_action")
+        )
+        action_score = act_ok / max(n, 1) * 0.30
+
+        coverage = (n / total_emails) * 0.10
+
+        return round(min(priority + classification + action_score + coverage, 1.0), 3)
+
+    def compute_final_score(self) -> float:
+        if not self.episode_actions:
+            return 0.0
+        if self.task_id == "email_classification":
+            return self.email_classification_score()
+        if self.task_id == "response_drafting":
+            return self.response_drafting_score()
+        if self.task_id == "support_session":
+            return self.support_session_score()
+        return 0.0
+
+    def step(self, action: Action) -> Tuple[Observation, Reward, bool, Dict]:
+        if self.done:
+            return (
+                self.get_observation(),
+                Reward(value=0.0, reason="Episode already done"),
+                True,
+                {},
+            )
+        if not self.task_id:
+            raise RuntimeError("Environment not initialized, call reset() first.")
+
+        self.step_count += 1
+        reward, info = self.process_action(action)
+        max_steps = self.task_config["max_steps"]
+        processing_status = self.current_email_idx >= len(self.email_queue)
+
+        if processing_status or self.step_count >= max_steps:
+            self.done = True
+            self.last_grader_score = self.compute_final_score()
+            info["final_score"] = self.last_grader_score
+
+        if not self.done and self.step_count > 0:
+            reward.value = round(reward.value - 0.005, 4)
+            reward.components["step_penality"] = -0.005
+
+        return self.get_observation(), reward, self.done, info
+
     def reset(self, task_id: str = "email_classification") -> Observation:
         if task_id not in TASK_CONFIGS:
             raise ValueError(
@@ -299,9 +433,3 @@ class EmailSortingEnvironment:
         self.done = False
         self.last_grader_score = None
         return self.get_observation()
-
-    def step(self, action: Action) -> Tuple[Observation, Reward, bool, Dict]:
-        pass
-
-    def state(self) -> Dict[str, Any]:
-        pass
