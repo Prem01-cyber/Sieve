@@ -1,0 +1,24 @@
+[project]
+name = "sieve"
+version = "1.0.0"
+description = "Customer support reinforcement learning environment for email triage, response drafting, and queue management."
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.135.3",
+    "uvicorn>=0.42.0",
+    "pydantic>=2.12.5",
+    "httpx>=0.28.1",
+    "openai>=2.30.0",
+    "nltk>=3.9.4",
+    "python-dotenv>=1.2.2",
+    "python-multipart>=0.0.22",
+    "pyyaml>=6.0.3",
+    "starlette>=1.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = []
