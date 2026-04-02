@@ -1,7 +1,15 @@
-from os import curdir
+from os import curdir, wait
 from typing import Dict, Any, List, Optional, Tuple
 from models import Action, ActionType, Email, Observation, Reward
 from data import TASK_CONFIGS
+
+import nltk
+from nltk.stem import PorterStemmer
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from nltk.tokenize import word_tokenize
+
+stemmer = PorterStemmer()
+vader = SentimentIntensityAnalyzer()
 
 
 class EmailSortingEnvironment:
@@ -62,7 +70,7 @@ class EmailSortingEnvironment:
 
     def process_email_classification(self, action: Action) -> Tuple[Reward, Dict]:
         if self.current_email_idx >= len(self.email_queue):
-            return Reward(value=0.0, reason="Queue is empty"), {}
+            return Reward(value=0.0, reason="Queue is empty"), {"error": "queue_empty"}
         if action.action_type != ActionType.CLASSIFY:
             return (
                 Reward(
@@ -114,7 +122,60 @@ class EmailSortingEnvironment:
         ), {"email_id": email["id"]}
 
     def process_response_drafting(self, action: Action) -> Tuple[Reward, Dict]:
-        pass
+        if self.current_email_idx >= len(self.email_queue):
+            return Reward(value=0.0, reason="Queue empty"), {"error": "queue_empty"}
+        if action.action_type != ActionType.RESPOND:
+            return (
+                Reward(
+                    value=-0.05,
+                    component={"wrong_action": -0.05},
+                    reason="Must use respond action",
+                ),
+                {},
+            )
+        email = self.email_queue[self.current_email_idx]
+        response = (action.response_text or "").strip()
+        response_lower = response.lower()
+        components: Dict[str, float] = {}
+        total = 0.0
+        if len(response) < 50:
+            components["too_short"] = -0.1
+            total -= 0.1
+        else:
+            components["adequate_length"] = 0.05
+            total += 0.05
+
+        required = email.get("required_keywords", [])
+        min_matches = email.get("min_keyword_matches", 1)
+        response_tokens = word_tokenize(response_lower)
+        response_stems = {stemmer.stem(t) for t in response_tokens}
+        matched = [kw for kw in required if stemmer.stem(kw.lower()) in response_stems]
+        kw_score = round(min(len(matched) / max(min_matches, 1), 1.0) * 0.25, 4)
+        total += kw_score
+
+        vader_scores = vader.polarity_scores(response)
+        if vader_scores["neg"] > 0.4:
+            components["unprofessional"] = -0.1
+            total -= 0.1
+
+        self.episode_actions.append(
+            {
+                "email_id": email["id"],
+                "action_type": "respond",
+                "response_length": len(response),
+                "keywords_matched": matched,
+                "keywords_required": required,
+            }
+        )
+
+        self.processed_emails.append(email)
+        self.current_email_idx += 1
+
+        return Reward(
+            value=round(total, 4),
+            components=components,
+            reason=f"{email['id']}: {len(matched)}/{min_matches} keywords matched",
+        ), {"email_id": email["id"], "keywords_matched": matched}
 
     def process_support_session(self, action: Action) -> Tuple[Reward, Dict]:
         pass
