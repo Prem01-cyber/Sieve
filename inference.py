@@ -11,7 +11,7 @@ from openai import OpenAI
 from pydantic import BaseModel, ConfigDict
 from logger import log_start, log_step, log_end
 
-API_BASE_URL: str = os.getenv("API_BASE_URL") or "https//router.huggingface.co/v1"
+API_BASE_URL: str = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME: str = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-7B-Instruct"
 API_KEY: str = os.getenv("OPENAI_API_KEY", "")
 HF_TOKEN: str = os.getenv("HF_TOKEN", "")
@@ -200,11 +200,11 @@ def run_task(task_id: str, client: OpenAI) -> Dict[str, Any]:
 
         grader = http.get("/grader").json()
         score = grader.get("score", 0.0)
-        log_end(success=score > 0.0, steps=steps, rewards=rewards)
+        log_end(success=score > 0.0, steps=steps, score=score, rewards=rewards)
 
     except Exception as exc:
         print(f"Episode error ({task_id}): {exc}", file=sys.stderr)
-        log_end(success=False, steps=steps, rewards=rewards)
+        log_end(success=False, steps=steps, score=0.0, rewards=rewards)
         score = 0.0
 
     return {

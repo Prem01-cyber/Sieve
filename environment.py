@@ -293,9 +293,9 @@ class EmailSortingEnvironment:
         if self.task_id == "email_classification":
             return self.process_email_classification(action)
         if self.task_id == "response_drafting":
-            self.process_response_drafting(action)
+            return self.process_response_drafting(action)
         if self.task_id == "support_session":
-            self.process_support_session(action)
+            return self.process_support_session(action)
         return Reward(value=0.0, reason="Unknown task"), {}
 
     def email_classification_score(self) -> float:
