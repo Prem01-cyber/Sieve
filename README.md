@@ -124,6 +124,52 @@ The agent manages a queue of mixed emails and must prioritize, classify, and tak
 - `done` (`bool`) — Whether the episode has ended
 - `info` (`Dict`) — Additional diagnostic information
 
+## Setup
+
+**Prerequisites:** Python 3.11+
+
+**Install dependencies**
+- `pip install -r requirements.txt`
+
+**Environment variables**
+
+- `API_BASE_URL` — LLM API endpoint (default: `https://router.huggingface.co/v1`)
+- `MODEL_NAME` — Model identifier (default: `Qwen/Qwen2.5-7B-Instruct`)
+- `OPENAI_API_KEY` — API key for the LLM provider
+- `HF_TOKEN` — Hugging Face token
+- `ENV_BASE_URL` — Running environment URL (default: `http://localhost:7860`)
+
+**Run the server**
+- `uvicorn app:app --host 0.0.0.0 --port 7860`
+
+**Run baseline inference**
+- `python inference.py`
+
+**Run with Docker**
+- `docker build -t sieve .`
+- `docker run -p 7860:7860 sieve`
+
+## Baseline Scores
+
+Baseline agent: `gpt-4o-mini` via OpenAI API
+
+| Task | Score | Steps | Total Reward |
+|------|-------|-------|-------------|
+| Email Classification | 0.860 | 10 | 1.555 |
+| Response Drafting | 0.956 | 6 | 1.692 |
+| Support Session | 0.850 | 15 | 1.400 |
+| **Average** | **0.889** | — | — |
+
+## Backend API
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `POST` | `/reset?task_id=<id>` | Reset environment for a task, returns initial Observation |
+| `POST` | `/step` | Submit an Action, returns `{observation, reward, done, info}` |
+| `GET` | `/state` | Current environment state |
+| `GET` | `/tasks` | List all tasks with action schema |
+| `GET` | `/grader` | Current grader score (0.0–1.0) |
+
 ## Observation Space
 
 ```json
