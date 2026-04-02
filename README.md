@@ -163,37 +163,5 @@ The agent manages a queue of mixed emails and must prioritize, classify, and tak
 }
 ```
 
-# Reward Categorization
-
-The reward is dense — every step produces a signal:
-
-| Component | Value | Trigger |
-|-----------|-------|---------|
-| `category_correct` | +0.15 | Correct email category |
-| `urgency_correct` | +0.05 | Correct urgency level |
-| `keyword_score` | 0–0.25 | Response keyword coverage |
-| `adequate_length` | +0.05 | Response ≥ 50 characters |
-| `vip_priority` | +0.08 | VIP email handled in first 4 steps |
-| `high_priority` | +0.05 | High-urgency email handled early |
-| `correct_action` | +0.06 | Correct respond/escalate/archive decision |
-| `response_present` | +0.02 | Non-empty response for respond action |
-| `step_penalty` | −0.005 | Applied every step (encourages efficiency) |
-| `wrong_action` | −0.03 to −0.05 | Wrong action type for task |
-| `spam_not_archived` | −0.04 | Spam email not archived |
-
-
-# Backend API 
-
-We will be using FastAPI as out backend framework, and we are adding end points addressed as per the mentioned requirements.
-
-## End Points
-
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/reset?task_id=<id>` | Reset environment for a task, returns initial Observation |
-| `POST` | `/step` | Submit an Action, returns `{observation, reward, done, info}` |
-| `GET` | `/state` | Current environment state |
-| `GET` | `/tasks` | List all tasks with action schema |
-| `GET` | `/grader` | Current grader score (0.0–1.0) |
 
 
