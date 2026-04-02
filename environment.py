@@ -249,6 +249,32 @@ class EmailSortingEnvironment:
             components["response_present"] = 0.02
             total += 0.02
 
+        if email.get("correct_category") == "spam" and action_type != "archive":
+            components["spam_not_archived"] = -0.04
+            total -= 0.04
+
+        self.episode_actions.append(
+            {
+                "email_id": email["id"],
+                "action_type": action_type,
+                "category": cat_given,
+                "urgency": urg_given,
+                "correct_category": email.get("correct_category"),
+                "correct_urgency": email.get("correct_urgency"),
+                "correct_action": correct_action,
+                "position": position,
+            }
+        )
+
+        self.processed_emails.append(email)
+        self.current_email_idx += 1
+
+        return Reward(
+            value=round(total, 4),
+            components=components,
+            reason=f"{email['id']} at position {position}: action={action_type}",
+        ), {"email_id": email["id"]}
+
     def process_action(self, action: Action) -> Tuple[Reward, Dict]:
         if self.task_id == "email_classification":
             return self.process_email_classification(action)
