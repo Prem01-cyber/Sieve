@@ -4,6 +4,26 @@ Sieve is a reinforcement learning environment that simulates a real-world custom
 
 ## How It Works
 
+```mermaid
+ sequenceDiagram
+    participant Agent
+    participant Sieve as Sieve (FastAPI)
+
+    Agent->>Sieve: POST /reset?task_id=email_classification
+    Sieve-->>Agent: Observation (current_email, available_actions, context)
+
+    loop Until done=true
+        Agent->>Agent: Read current_email, decide Action
+        Agent->>Sieve: POST /step (Action)
+        Sieve->>Sieve: Compute reward, update state
+        Sieve-->>Agent: StepResult (observation, reward, done, info)
+    end
+
+    Agent->>Sieve: GET /grader
+    Sieve-->>Agent: Final score (0.0–1.0)
+```
+
+
 ```
 Agent                          Sieve (FastAPI server)
   |                                      |
