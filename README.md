@@ -2,30 +2,64 @@
 
 Primarily there are gonna be three major tasks **Email Classification**, **Response Drafting** and **Support Session**
 
-## Email Classification - Task 1 
+## Email Classification - Task 1
 
-The agent here receives one email at a time and must classify into the categories **billing**, **technical**, **general**, **spam**, **account** and **feature_request** and respective urgencies i.e **high**, **medium** and **low**
+The agent receives one email at a time and must classify it into a category and urgency using the `classify` action.
 
-Rewards shall be assigned for each correct category and urgency classification.
+**Step Rewards**
+- Correct category: `+0.15`
+- Wrong category: `-0.05`
+- Correct urgency: `+0.05`
+- Wrong urgency: `-0.02`
+- Wrong action type (not `classify`): `-0.05`
+- Step penalty (applied every step): `-0.005`
 
-## Response Drafting - Task 2 
+**Final Grader Score**
+- Category accuracy accounts for `70%` of the final score
+- Urgency accuracy accounts for `30%` of the final score
 
-The agent reads a customer email and drafts a professional response. Responses are graded on:
+## Response Drafting - Task 2
 
-- Coverage of required keywords for the specific issue type
-- Minimum length (50+ characters)
-- Professional tone
+The agent reads a customer email and drafts a professional response using the `respond` action.
 
-Rewards shall be based on the coverage and length of the response drafted.
+**Step Rewards**
+- Response length >= 50 characters: `+0.05`
+- Response length < 50 characters: `-0.10`
+- Keyword coverage: up to `+0.25` scaled by `matched / min_required` keywords
+- Negative/unprofessional tone (VADER negative score > 0.4): `-0.10`
+- Wrong action type (not `respond`): `-0.05`
+- Step penalty (applied every step): `-0.005`
 
-## Support Session - Task 3 
+**Final Grader Score**
+- Keyword coverage (0.0–1.0) weighted at `0.80`
+- Length bonus of up to `0.20` for responses longer than 50 characters (scaled by `length / 200`)
+- Score is averaged across all emails in the task
 
-The agent manages a queue of mixed emails and must perform below actions 
+## Support Session - Task 3
 
-- Identify and prioritize high priority customers first 
-- Handle high urgency emails before low urgency 
-- Choosing actions i.e **respond**, **escalate** or **archive** accordingly
-- Provide correct category and urgency classification
+The agent manages a queue of mixed emails and must prioritize, classify, and take the correct action on each one.
+
+**Step Rewards**
+- VIP email handled within first 4 positions: `+0.08`
+- VIP email handled at position 4 or later: `-0.05`
+- High urgency email handled within first 6 positions: `+0.05`
+- Low urgency email handled after position 6: `+0.03`
+- Correct category: `+0.04`
+- Correct urgency: `+0.02`
+- Correct action (`respond`, `escalate`, or `archive`): `+0.06`
+- Wrong action: `-0.03`
+- Response text provided and longer than 50 characters: `+0.02`
+- Spam email not archived: `-0.04`
+- Step penalty (applied every step): `-0.005`
+
+**Final Grader Score**
+- VIP prioritization: up to `0.20` (reduced to 40% if handled late)
+- High urgency prioritization: up to `0.10` (reduced to 40% if handled late)
+- Category accuracy: up to `0.15`
+- Urgency accuracy: up to `0.15`
+- Action accuracy: up to `0.30`
+- Email coverage (emails processed / total): up to `0.10`
+- Maximum possible score: `1.0`
 
 ## Data Models
 
