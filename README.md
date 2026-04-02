@@ -1,3 +1,12 @@
+---
+title: Sieve
+emoji: 📧
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # Sieve — Customer Support RL Environment
 
 Sieve is a reinforcement learning environment that simulates a real-world customer support inbox. An AI agent interacts with it through a standard `reset() / step() / state()` HTTP API, receiving emails, taking actions, and earning rewards based on how well it handles each situation.
