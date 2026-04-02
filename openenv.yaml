@@ -78,7 +78,7 @@ action_space:
 baseline:
   agent: gpt-4o-mini
   scores:
-    email_classification: 0.860
-    response_drafting: 0.956
-    support_session: 0.850
-    average: 0.889
+    email_classification: 0.930
+    response_drafting: 0.920
+    support_session: 0.882
+    average: 0.911
