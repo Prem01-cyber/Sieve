@@ -1,0 +1,84 @@
+name: sieve
+version: "1.0.0"
+description: >
+  A customer support reinforcement learning environment where an agent triages,
+  classifies, drafts responses to, and prioritizes real-world support emails.
+tags:
+  - openenv
+  - customer-support
+  - email-triage
+  - nlp
+
+api:
+  base_url: http://localhost:7860
+  reset: POST /reset
+  step: POST /step
+  state: GET /state
+  tasks: GET /tasks
+
+tasks:
+  - id: email_classification
+    name: Email Classification
+    difficulty: easy
+    description: >
+      Classify each incoming customer support email by category
+      (billing/technical/general/spam/account/feature_request)
+      and urgency (high/medium/low) using action_type='classify'.
+    max_steps: 15
+    score_range: [0.0, 1.0]
+
+  - id: response_drafting
+    name: Response Drafting
+    difficulty: medium
+    description: >
+      Draft professional, empathetic responses to customer support emails.
+      Each response must cover required keywords, exceed 50 characters,
+      and maintain a professional tone. Use action_type='respond'.
+    max_steps: 10
+    score_range: [0.0, 1.0]
+
+  - id: support_session
+    name: Full Support Session
+    difficulty: hard
+    description: >
+      Manage a queue of 15 mixed emails. Prioritize VIP customers first,
+      then high-urgency emails. Choose the correct action (respond/escalate/archive)
+      per email, provide category and urgency, and use email_id to select
+      which email to process each step.
+    max_steps: 40
+    score_range: [0.0, 1.0]
+
+observation_space:
+  current_email:
+    id: string
+    subject: string
+    body: string
+    sender: string
+    sender_tier: "standard | vip"
+    received_minutes_ago: integer
+  email_queue: "array of Email objects (populated in support_session only)"
+  processed_count: integer
+  step_count: integer
+  task_id: string
+  task_description: string
+  available_actions: "array of strings"
+  context:
+    max_steps: integer
+    remaining_steps: integer
+    queue_size: integer
+
+action_space:
+  action_type: "classify | respond | escalate | archive | skip"
+  category: "billing | technical | general | spam | account | feature_request"
+  urgency: "high | medium | low"
+  response_text: "string — required for respond"
+  escalation_reason: "string — required for escalate"
+  email_id: "string — used in support_session to select target email"
+
+baseline:
+  agent: gpt-4o-mini
+  scores:
+    email_classification: 0.860
+    response_drafting: 0.956
+    support_session: 0.850
+    average: 0.889
