@@ -31,6 +31,10 @@ def step(action: Action):
         raise HTTPException(
             status_code=400, detail="Not initialized, call /reset first."
         )
+    if env.done:
+        raise HTTPException(
+            status_code=400, detail="Episode already finished, call /reset first."
+        )
     observation, reward, status, info = env.step(action)
     return StepResult(observation=observation, reward=reward, done=status, info=info)
 
