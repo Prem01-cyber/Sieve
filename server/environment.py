@@ -4,6 +4,7 @@ from models import Action, ActionType, Email, Observation, Reward
 from .data import TASK_CONFIGS
 
 import nltk
+import random
 
 nltk.download("vader_lexicon", quiet=True)
 nltk.download("punkt_tab", quiet=True)
@@ -236,7 +237,7 @@ class EmailSortingEnvironment:
         cat_given = action.category.value if action.category else None
         urg_given = action.urgency.value if action.urgency else None
 
-        if cat_given == email.get("correct_urgency"):
+        if cat_given == email.get("correct_category"):
             components["category_correct"] = 0.04
             total += 0.04
         if urg_given == email.get("correct_urgency"):
@@ -415,9 +416,9 @@ class EmailSortingEnvironment:
             self.last_grader_score = self.compute_final_score()
             info["final_score"] = self.last_grader_score
 
-        if not self.done and self.step_count > 0:
+        if not self.done:
             reward.value = round(reward.value - 0.005, 4)
-            reward.components["step_penality"] = -0.005
+            reward.components["step_penalty"] = -0.005
 
         return self.get_observation(), reward, self.done, info
 
@@ -428,7 +429,8 @@ class EmailSortingEnvironment:
             )
         self.task_id = task_id
         self.task_config = TASK_CONFIGS[task_id]
-        self.email_queue = [dict(e) for e in self.task_config["emails"]]
+        shuffled_emails = random.sample(self.task_config["emails"], len(self.task_config["emails"]))
+        self.email_queue = [dict(e) for e in shuffled_emails]
         self.current_email_idx = 0
         self.step_count = 0
         self.processed_emails = []

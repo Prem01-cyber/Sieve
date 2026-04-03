@@ -194,3 +194,52 @@ Baseline agent: `gpt-4o-mini` via OpenAI API
 | Email Classification | 0.930 | 10 | 1.755 |
 | Response Drafting | 0.920 | 6 | 1.650 |
 | Support Session | 0.882 | 15 | 1.506 |
+
+## Local Development Setup
+
+### Prerequisites
+- Python 3.11+
+- uv installed
+
+### Steps
+
+##### 1. Create virtual environment
+```bash
+uv venv --python 3.12
+```
+
+##### 2. Activate virtual environment
+```bash
+source .venv/bin/activate
+```
+
+##### 3. Verify venv is active
+```bash
+which python # Should show: /path/to/Sieve/.venv/bin/python
+```
+
+##### 4. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+##### 5. Download NLTK data (one time only)
+```bash
+python -c "import nltk; nltk.download('vader_lexicon', quiet=True); nltk.download('punkt_tab', quiet=True)"
+```
+
+##### 6. Set up environment variables
+```bash
+cp .env.example .env
+```
+Fill in the required API keys in `.env`
+
+##### 7. Start the server
+```bash
+uvicorn server.app:app --host 0.0.0.0 --port 7860 --reload
+```
+
+##### 8. Verify it's running
+Open `http://localhost:7860/docs` in your browser
+
+
