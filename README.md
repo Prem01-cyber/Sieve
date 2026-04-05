@@ -24,6 +24,7 @@ The agent calls `/reset` to start an episode, then loops — reading the current
 ├── openenv.yaml       # OpenEnv environment metadata
 ├── pyproject.toml     # Project config and dependencies
 ├── Dockerfile         # Container definition
+├── .env.example       # Example environment variables (copy to .env)
 └── server/
     ├── app.py         # FastAPI application and API endpoints
     ├── environment.py # Core environment logic (step, reset, reward, grader)
@@ -198,48 +199,85 @@ Baseline agent: `gpt-4o-mini` via OpenAI API
 ## Local Development Setup
 
 ### Prerequisites
-- Python 3.11+
-- uv installed
+
+- Python 3.11 or 3.12 (matches the Docker image)
+- Optional: [uv](https://docs.astral.sh/uv/) for creating a virtual environment
 
 ### Steps
 
-##### 1. Create virtual environment
-```bash
-uv venv --python 3.12
-```
+**1. Create and activate a virtual environment**
 
-##### 2. Activate virtual environment
+With uv:
+
 ```bash
+uv venv --python 3.11
 source .venv/bin/activate
 ```
 
-##### 3. Verify venv is active
+Or with the standard library:
+
 ```bash
-which python # Should show: /path/to/Sieve/.venv/bin/python
+python3.11 -m venv .venv
+source .venv/bin/activate
 ```
 
-##### 4. Install dependencies
+**2. Install dependencies**
+
 ```bash
 pip install -r requirements.txt
 ```
 
-##### 5. Download NLTK data (one time only)
+**3. Download NLTK data (one time)**
+
 ```bash
 python -c "import nltk; nltk.download('vader_lexicon', quiet=True); nltk.download('punkt_tab', quiet=True)"
 ```
 
-##### 6. Set up environment variables
+**4. Environment variables**
+
+Copy the example file and edit `.env`:
+
 ```bash
 cp .env.example .env
 ```
-Fill in the required API keys in `.env`
 
-##### 7. Start the server
+| Variable | Required for | Description |
+|----------|----------------|-------------|
+| `API_BASE_URL` | Baseline inference | OpenAI-compatible API base URL (default: Hugging Face router). |
+| `MODEL_NAME` | Baseline inference | Model identifier for that API. |
+| `HF_TOKEN` | Baseline (HF) | Hugging Face token when using the HF router or similar. |
+| `OPENAI_API_KEY` | Baseline (OpenAI) | OpenAI API key when using OpenAI’s API. Inference uses `HF_TOKEN` if set, otherwise `OPENAI_API_KEY`. |
+| `ENV_BASE_URL` | Baseline inference | URL of this environment (`http://localhost:7860` locally). |
+
+Running only the API server does not require LLM keys.
+
+**5. Start the server**
+
 ```bash
 uvicorn server.app:app --host 0.0.0.0 --port 7860 --reload
 ```
 
-##### 8. Verify it's running
-Open `http://localhost:7860/docs` in your browser
+Open `http://localhost:7860/docs` to confirm the API is up.
+
+### Baseline inference
+
+With the server running (step 5) and `.env` configured with LLM credentials, run:
+
+```bash
+python inference.py
+```
+
+Structured logs go to stdout (`[START]`, `[STEP]`, `[END]`); a JSON summary is printed to stderr.
+
+### Docker
+
+Build and run the same service the Hugging Face Space uses:
+
+```bash
+docker build -t sieve .
+docker run --rm -p 7860:7860 sieve
+```
+
+Then set `ENV_BASE_URL=http://localhost:7860` (or the container’s URL) for `inference.py`.
 
 

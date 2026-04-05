@@ -13,8 +13,8 @@ from logger import log_start, log_step, log_end
 
 API_BASE_URL: str = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME: str = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-7B-Instruct"
-API_KEY: str = os.getenv("OPENAI_API_KEY", "")
-HF_TOKEN: str = os.getenv("HF_TOKEN", "")
+# HF router and similar setups use HF_TOKEN; OpenAI uses OPENAI_API_KEY.
+API_KEY: str = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY", "")
 ENV_BASE_URL: str = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 TASKS = ["email_classification", "response_drafting", "support_session"]
 MAX_STEPS_FALLBACK = 60
@@ -217,7 +217,10 @@ def run_task(task_id: str, client: OpenAI) -> Dict[str, Any]:
 
 def main() -> None:
     if not API_KEY:
-        print("Error: OPENAI_API_KEY is not set.", file=sys.stderr)
+        print(
+            "Error: set HF_TOKEN or OPENAI_API_KEY for the LLM API key.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     try:
