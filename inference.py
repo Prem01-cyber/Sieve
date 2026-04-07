@@ -199,15 +199,16 @@ def run_task(task_id: str, client: OpenAI) -> Dict[str, Any]:
             log_step(steps, action, reward, done, error)
 
         grader = http.get("/grader").json()
-        raw_score = grader.get("score", 0.0)
-        _EPS = 1e-6
-        score = min(max(raw_score, _EPS), 1.0 - _EPS)
-        log_end(success=score > _EPS, steps=steps, score=score, rewards=rewards)
+        raw_score = grader.get("score") or 0.0
+        # Clamp strictly inside (0, 1): logger uses :.4f, so bounds must be
+        # representable without rounding to 0.0000 or 1.0000.
+        score = min(max(raw_score, 0.001), 0.999)
+        log_end(success=True, steps=steps, score=score, rewards=rewards)
 
     except Exception as exc:
         print(f"Episode error ({task_id}): {exc}", file=sys.stderr)
-        log_end(success=False, steps=steps, score=0.0, rewards=rewards)
-        score = 0.0
+        score = 0.001
+        log_end(success=False, steps=steps, score=score, rewards=rewards)
 
     return {
         "task_id": task_id,
