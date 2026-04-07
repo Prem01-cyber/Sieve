@@ -66,9 +66,11 @@ def grader():
     score = env.last_grader_score
     if score is None and env.episode_actions:
         score = env.compute_final_score()
+    success = score is not None and 0.0 < score < 1.0
     return {
         "task_id": env.task_id,
         "score": score,
+        "success": success,
         "done": env.done,
         "processed_count": len(env.processed_emails),
         "total_emails": len(env.email_queue),

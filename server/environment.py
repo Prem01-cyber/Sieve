@@ -386,14 +386,16 @@ class EmailSortingEnvironment:
 
     def compute_final_score(self) -> float:
         if not self.episode_actions:
-            return 0.0
+            return 0.001
         if self.task_id == "email_classification":
-            return self.email_classification_score()
-        if self.task_id == "response_drafting":
-            return self.response_drafting_score()
-        if self.task_id == "support_session":
-            return self.support_session_score()
-        return 0.0
+            score = self.email_classification_score()
+        elif self.task_id == "response_drafting":
+            score = self.response_drafting_score()
+        elif self.task_id == "support_session":
+            score = self.support_session_score()
+        else:
+            return 0.001
+        return round(max(0.001, min(0.999, score)), 3)
 
     def step(self, action: Action) -> Tuple[Observation, Reward, bool, Dict]:
         if self.done:
