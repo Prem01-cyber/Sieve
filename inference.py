@@ -14,7 +14,7 @@ from logger import log_start, log_step, log_end
 API_BASE_URL: str = os.getenv("API_BASE_URL") or "https://router.huggingface.co/v1"
 MODEL_NAME: str = os.getenv("MODEL_NAME") or "Qwen/Qwen2.5-7B-Instruct"
 # HF router and similar setups use HF_TOKEN; OpenAI uses OPENAI_API_KEY.
-API_KEY: str = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY", "")
+API_KEY: str = os.getenv("OPENAI_API_KEY") or os.getenv("HF_TOKEN", "")
 ENV_BASE_URL: str = os.getenv("ENV_BASE_URL", "http://localhost:7860")
 TASKS = ["email_classification", "response_drafting", "support_session"]
 MAX_STEPS_FALLBACK = 60
