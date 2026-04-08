@@ -13,7 +13,7 @@ class ActionType(str, Enum):
 
 class Category(str, Enum):
     BILLING = "billing"
-    TECHINCAL = "technical"
+    TECHNICAL = "technical"
     GENERAL = "general"
     SPAM = "spam"
     ACCOUNT = "account"

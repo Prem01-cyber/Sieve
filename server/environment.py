@@ -117,7 +117,7 @@ class EmailSortingEnvironment:
             components["urgency_correct"] = 0.05
             total += 0.05
         else:
-            components["urgency_worng"] = -0.02
+            components["urgency_wrong"] = -0.02
             total -= 0.02
 
         self.episode_actions.append(
